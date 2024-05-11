@@ -47,12 +47,16 @@ func (client Client) SendMentionNotification(identifierCode string, redirectURL 
 		return err
 	}
 
+	message := `**📢 Thông báo: Góp ý cần trả lời!**
+Bạn đã được nhắc để trả lời một góp ý quan trọng. Hãy nhanh chóng truy cập vào YOKAIZEN để đưa ra ý kiến của mình:
+[Trả lời ngay](%s)
+`
 	payload := map[string]any{
 		"receiver_id": userID,
 		"bot_id":      client.BotID,
 		"body": map[string]any{
 			"type":             "text",
-			"text":             fmt.Sprintf("Bạn đã được đề cập trong bài viết %s", redirectURL),
+			"text":             fmt.Sprintf(message, redirectURL),
 			"is_markdown_text": true,
 		},
 	}
