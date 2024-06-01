@@ -130,7 +130,7 @@ func main() {
 				Slug       string `json:"slug"`
 				CategoryID uint64 `json:"category_id"`
 				CreatedBy  struct {
-					Id       int    `json:"id"`
+					Id       uint64 `json:"id"`
 					Username string `json:"username"`
 					Name     string `json:"name"`
 				} `json:"created_by"`
@@ -141,7 +141,7 @@ func main() {
 			return err
 		}
 
-		if err := topicHooker.TopicCreated(req.Topic.CategoryID, req.Topic.ID, req.Topic.Slug, req.Topic.Title, req.Topic.CreatedBy.Name); err != nil {
+		if err := topicHooker.TopicCreated(req.Topic.CategoryID, req.Topic.ID, req.Topic.Slug, req.Topic.Title, req.Topic.CreatedBy.Id, req.Topic.CreatedBy.Name); err != nil {
 			log.Errorf("hook topic created failed: %v", err)
 			return err
 		}

@@ -93,8 +93,9 @@ func (client Client) SendTopicCreatedNotification(receiverUsername string, topic
 		return err
 	}
 
-	message := `**%s** đã tạo topic **%s** thuộc danh mục **%s** do bạn quản lý.
-[Xem chi tiết!](%s)`
+	message := `**📢 Thông báo: Chủ đề mới đã được mở!**
+**%s** đã tạo chủ đề **%s** thuộc danh mục **%s** do bạn quản lý.
+[Xem chủ đề!](%s)`
 
 	payload := map[string]any{
 		"receiver_id": userID,

@@ -14,7 +14,7 @@ type TopicHooker struct {
 	UserRepository  repositories.UserRepository
 }
 
-func (hooker TopicHooker) TopicCreated(categoryID uint64, topicID uint64, topicSlug string, title string, createdByName string) error {
+func (hooker TopicHooker) TopicCreated(categoryID uint64, topicID uint64, topicSlug string, title string, createdByID uint64, createdByName string) error {
 	// get category information
 	category, err := hooker.TopicRepository.GetCategoryByID(categoryID)
 	if err != nil {
@@ -30,9 +30,11 @@ func (hooker TopicHooker) TopicCreated(categoryID uint64, topicID uint64, topicS
 	// send notification to users
 	redirectURL := fmt.Sprintf("%s/t/%s/%d", hooker.DiscourseHost, topicSlug, topicID)
 	for _, user := range users {
-		if err := hooker.GapoWorkClient.SendTopicCreatedNotification(user.Username, title, createdByName, category.Name, redirectURL); err != nil {
-			log.Errorf("failed to send Gapo notification for `topic created` to user `%s`: %v", user.Username, err)
-			continue
+		if user.ID != createdByID {
+			if err := hooker.GapoWorkClient.SendTopicCreatedNotification(user.Username, title, createdByName, category.Name, redirectURL); err != nil {
+				log.Errorf("failed to send Gapo notification for `topic created` to user `%s`: %v", user.Username, err)
+				continue
+			}
 		}
 	}
 	return nil
