@@ -41,8 +41,8 @@ func (client Client) GetUserID(identifierCode string) (uint64, error) {
 	return resp.Data.UserId, nil
 }
 
-func (client Client) SendMentionNotification(identifierCode string, redirectURL string) error {
-	userID, err := client.GetUserID(identifierCode)
+func (client Client) SendMentionNotification(receiverUsername string, redirectURL string) error {
+	userID, err := client.GetUserID(receiverUsername)
 	if err != nil {
 		return err
 	}
@@ -60,6 +60,52 @@ Bạn đã được nhắc để trả lời một góp ý quan trọng. Hãy nh
 			"is_markdown_text": true,
 		},
 	}
+	marshal, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	agent := fiber.Post(client.Host + "/3rd-bot/v1.0/3rd/messages")
+	agent.Set("Content-Type", "application/json")
+	agent.Set("x-gapo-api-key", client.BotToken)
+	agent.Body(marshal)
+
+	statusCode, body, errs := agent.Bytes()
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
+
+	if statusCode != 200 {
+		return fmt.Errorf("failed to send mention notification: %s", body)
+	}
+
+	var resp fiber.Map
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (client Client) SendTopicCreatedNotification(receiverUsername string, topicTitle string, createdByName string, categoryName string, redirectUrl string) error {
+	userID, err := client.GetUserID(receiverUsername)
+	if err != nil {
+		return err
+	}
+
+	message := `**%s** đã tạo topic **%s** thuộc danh mục **%s** do bạn quản lý.
+[Xem chi tiết!](%s)`
+
+	payload := map[string]any{
+		"receiver_id": userID,
+		"bot_id":      client.BotID,
+		"body": map[string]any{
+			"type":             "text",
+			"text":             fmt.Sprintf(message, createdByName, topicTitle, categoryName, redirectUrl),
+			"is_markdown_text": true,
+		},
+	}
+
 	marshal, err := json.Marshal(payload)
 	if err != nil {
 		return err

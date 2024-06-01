@@ -2,9 +2,10 @@ package main
 
 import (
 	"discourse-notification/gapo"
+	"discourse-notification/internal/hooks"
+	"discourse-notification/internal/repositories"
 	"fmt"
 	"github.com/gofiber/fiber/v2/log"
-	"github.com/joho/godotenv"
 	"os"
 	"time"
 
@@ -47,15 +48,18 @@ func (DiscourseUser) TableName() string {
 
 func main() {
 	// load .env file
-	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loading .env file")
-	}
+	//if err := godotenv.Load(); err != nil {
+	//	log.Fatal("Error loading .env file")
+	//}
 
 	discourseHost := os.Getenv("DISCOURSE_HOST")
 
 	// connect DB
-	dsn := "host=localhost user=gorm password=gorm dbname=gorm port=9920 sslmode=disable TimeZone=Asia/Bangkok"
-	dsn = os.Getenv("DATABASE_DSN")
+	dsn := os.Getenv("DATABASE_DSN")
+	if dsn == "" {
+		dsn = "host=localhost user=gorm password=gorm dbname=gorm port=9920 sslmode=disable TimeZone=Asia/Bangkok"
+	}
+
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic(err)
@@ -72,6 +76,18 @@ func main() {
 		BotID:    botID,
 		BotToken: botToken,
 		ApiKey:   apiKey,
+	}
+
+	// repositories
+	topicRepository := repositories.NewTopicRepository(db)
+	userRepository := repositories.NewUserRepository(db)
+
+	// services
+	topicHooker := &hooks.TopicHooker{
+		DiscourseHost:   discourseHost,
+		GapoWorkClient:  &gapoClient,
+		TopicRepository: topicRepository,
+		UserRepository:  userRepository,
 	}
 
 	// create fiber app
@@ -99,10 +115,37 @@ func main() {
 			log.Infof("User %s has been mentioned", user.Username)
 
 			if err := gapoClient.SendMentionNotification(user.Username, fmt.Sprintf("%s/t/%s/%d/%d", discourseHost, req.Notification.Slug, req.Notification.TopicId, req.Notification.PostNumber)); err != nil {
-				log.Errorf("failed to send Gapo notification: %v", err)
+				log.Errorf("failed to send Gapo notification for `user mension`: %v", err)
 				return err
 			}
 		}
+		return c.SendString("Success!")
+	})
+
+	app.Post("/hooks/discourse/topic-created", func(c *fiber.Ctx) error {
+		var req struct {
+			Topic struct {
+				ID         uint64 `json:"id"`
+				Title      string `json:"title"`
+				Slug       string `json:"slug"`
+				CategoryID uint64 `json:"category_id"`
+				CreatedBy  struct {
+					Id       int    `json:"id"`
+					Username string `json:"username"`
+					Name     string `json:"name"`
+				} `json:"created_by"`
+			} `json:"topic"`
+		}
+		if err := c.BodyParser(&req); err != nil {
+			log.Errorf("failed to parse request: %v", err)
+			return err
+		}
+
+		if err := topicHooker.TopicCreated(req.Topic.CategoryID, req.Topic.ID, req.Topic.Slug, req.Topic.Title, req.Topic.CreatedBy.Name); err != nil {
+			log.Errorf("hook topic created failed: %v", err)
+			return err
+		}
+
 		return c.SendString("Success!")
 	})
 
