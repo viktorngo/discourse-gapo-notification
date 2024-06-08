@@ -28,10 +28,15 @@ func (hooker TopicHooker) TopicCreated(categoryID uint64, topicID uint64, topicS
 	}
 
 	// send notification to users
+	message := `**📢 Thông báo: Chủ đề mới đã được mở!**
+**%s** đã tạo chủ đề **%s** thuộc danh mục **%s** do bạn quản lý.
+[Xem chủ đề!](%s)`
+
 	redirectURL := fmt.Sprintf("%s/t/%s/%d", hooker.DiscourseHost, topicSlug, topicID)
+	msg := fmt.Sprintf(message, createdByName, title, category.Name, redirectURL)
 	for _, user := range users {
 		if user.ID != createdByID {
-			if err := hooker.GapoWorkClient.SendTopicCreatedNotification(user.Username, title, createdByName, category.Name, redirectURL); err != nil {
+			if err := hooker.GapoWorkClient.SendNotification(user.Username, msg); err != nil {
 				log.Errorf("failed to send Gapo notification for `topic created` to user `%s`: %v", user.Username, err)
 				continue
 			}

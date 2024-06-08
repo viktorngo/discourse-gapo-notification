@@ -115,7 +115,12 @@ func main() {
 			}
 			log.Infof("User %s has been mentioned", user.Username)
 
-			if err := gapoClient.SendMentionNotification(user.Username, fmt.Sprintf("%s/t/%s/%d/%d", discourseHost, req.Notification.Slug, req.Notification.TopicId, req.Notification.PostNumber)); err != nil {
+			message := `**📢 Thông báo: Góp ý cần trả lời!**
+Bạn đã được nhắc để trả lời một góp ý quan trọng. Hãy nhanh chóng truy cập vào YOKAIZEN để đưa ra ý kiến của mình:
+[Trả lời ngay](%s)
+`
+			redirectUrl := fmt.Sprintf("%s/t/%s/%d/%d", discourseHost, req.Notification.Slug, req.Notification.TopicId, req.Notification.PostNumber)
+			if err := gapoClient.SendNotification(user.Username, fmt.Sprintf(message, redirectUrl)); err != nil {
 				log.Errorf("failed to send Gapo notification for `user mension`: %v", err)
 				return err
 			}
