@@ -69,6 +69,10 @@ func (h PostHandler) PostEdited(c *fiber.Ctx) error {
 			return err
 		}
 
+		if topic.DeletedAt != nil {
+			return c.SendString("topic is deleted")
+		}
+
 		// send topic information to Workflow hook
 		err = h.workflowHook.SendTopic(c.Context(), external_hook.TopicReq{
 			CreatorUsername: req.Post.Username,
