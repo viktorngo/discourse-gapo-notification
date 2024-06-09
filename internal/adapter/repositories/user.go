@@ -1,13 +1,10 @@
 package repositories
 
 import (
+	"discourse-notification/internal/core/port"
 	"discourse-notification/model"
 	"gorm.io/gorm"
 )
-
-type UserRepository interface {
-	GetUsersByGroupID(groupID uint64) ([]model.User, error)
-}
 
 type userRepository struct {
 	db *gorm.DB
@@ -24,6 +21,6 @@ func (u userRepository) GetUsersByGroupID(groupID uint64) ([]model.User, error) 
 	return users, nil
 }
 
-func NewUserRepository(db *gorm.DB) UserRepository {
+func NewUserRepository(db *gorm.DB) port.UserRepository {
 	return &userRepository{db: db}
 }

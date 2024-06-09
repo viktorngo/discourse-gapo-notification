@@ -1,9 +1,11 @@
 package main
 
 import (
-	"discourse-notification/gapo"
-	"discourse-notification/internal/hooks"
-	"discourse-notification/internal/repositories"
+	"discourse-notification/internal/adapter/external_hook"
+	"discourse-notification/internal/adapter/gapo"
+	"discourse-notification/internal/adapter/handler/api"
+	"discourse-notification/internal/adapter/repositories"
+	"discourse-notification/internal/core/service"
 	"fmt"
 	"github.com/gofiber/fiber/v2/log"
 	"github.com/joho/godotenv"
@@ -79,17 +81,28 @@ func main() {
 		ApiKey:   apiKey,
 	}
 
+	// external hook
+	workflowHost := os.Getenv("WORKFLOW_HOST")
+	workflowUUID := os.Getenv("WORKFLOW_UUID")
+	workflowHook := external_hook.NewWorkflowHookClient(workflowHost, workflowUUID)
+
 	// repositories
 	topicRepository := repositories.NewTopicRepository(db)
 	userRepository := repositories.NewUserRepository(db)
+	categoryRepository := repositories.NewcategoryRepository(db)
 
 	// services
-	topicHooker := &hooks.TopicHooker{
-		DiscourseHost:   discourseHost,
-		GapoWorkClient:  &gapoClient,
-		TopicRepository: topicRepository,
-		UserRepository:  userRepository,
+	topicService := &service.TopicService{
+		DiscourseHost:      discourseHost,
+		Notification:       &gapoClient,
+		TopicRepository:    topicRepository,
+		UserRepository:     userRepository,
+		CategoryRepository: categoryRepository,
 	}
+
+	// handler
+	topicHandler := api.NewHandlerService(topicService)
+	postHandler := api.NewPostHandler(topicService, workflowHook)
 
 	// create fiber app
 	app := fiber.New()
@@ -123,32 +136,10 @@ func main() {
 		return c.SendString("Success!")
 	})
 
-	app.Post("/hooks/discourse/topic-created", func(c *fiber.Ctx) error {
-		var req struct {
-			Topic struct {
-				ID         uint64 `json:"id"`
-				Title      string `json:"title"`
-				Slug       string `json:"slug"`
-				CategoryID uint64 `json:"category_id"`
-				CreatedBy  struct {
-					Id       uint64 `json:"id"`
-					Username string `json:"username"`
-					Name     string `json:"name"`
-				} `json:"created_by"`
-			} `json:"topic"`
-		}
-		if err := c.BodyParser(&req); err != nil {
-			log.Errorf("failed to parse request: %v", err)
-			return err
-		}
+	app.Post("/hooks/discourse/topic-created", topicHandler.TopicCreated)
 
-		if err := topicHooker.TopicCreated(req.Topic.CategoryID, req.Topic.ID, req.Topic.Slug, req.Topic.Title, req.Topic.CreatedBy.Id, req.Topic.CreatedBy.Name); err != nil {
-			log.Errorf("hook topic created failed: %v", err)
-			return err
-		}
-
-		return c.SendString("Success!")
-	})
+	app.Post("/hooks/discourse/post-created", postHandler.PostCreated)
+	app.Post("/hooks/discourse/post-edited", postHandler.PostEdited)
 
 	app.Listen("0.0.0.0:8000")
 }
