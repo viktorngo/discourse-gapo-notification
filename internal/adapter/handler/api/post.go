@@ -48,9 +48,11 @@ func (h PostHandler) PostCreated(c *fiber.Ctx) error {
 		if err != nil {
 			return fmt.Errorf("failed to send topic to workflow: %w", err)
 		}
+
+		return c.SendString("sent hook workflow")
 	}
 
-	return c.SendString("sent hook workflow")
+	return c.SendString("nothing change")
 }
 
 func (h PostHandler) PostEdited(c *fiber.Ctx) error {
@@ -81,7 +83,9 @@ func (h PostHandler) PostEdited(c *fiber.Ctx) error {
 		if err != nil {
 			return fmt.Errorf("failed to send topic to workflow: %w", err)
 		}
+
+		return c.SendString("sent hook workflow")
 	}
 
-	return c.SendString("Success!")
+	return c.SendString("nothing change")
 }
