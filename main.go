@@ -8,6 +8,7 @@ import (
 	"discourse-notification/internal/core/service"
 	"fmt"
 	"github.com/gofiber/fiber/v2/log"
+	"github.com/joho/godotenv"
 	"os"
 	"time"
 
@@ -50,9 +51,9 @@ func (DiscourseUser) TableName() string {
 
 func main() {
 	// load .env file
-	//if err := godotenv.Load(); err != nil {
-	//	log.Fatal("Error loading .env file")
-	//}
+	if err := godotenv.Load(); err != nil {
+		log.Fatal("Error loading .env file")
+	}
 
 	discourseHost := os.Getenv("DISCOURSE_HOST")
 
