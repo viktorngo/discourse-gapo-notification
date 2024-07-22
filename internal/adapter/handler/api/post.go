@@ -54,6 +54,7 @@ func (h PostHandler) PostCreated(c *fiber.Ctx) error {
 			Event:           "topic_created",
 			CategoryID:      int(category.ID),
 			CategoryName:    category.Name,
+			CreatedAt:       topic.CreatedAt,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to send topic to workflow: %w", err)
@@ -101,6 +102,7 @@ func (h PostHandler) PostEdited(c *fiber.Ctx) error {
 			Event:           "topic_edited",
 			CategoryID:      int(category.ID),
 			CategoryName:    category.Name,
+			CreatedAt:       topic.CreatedAt,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to send topic to workflow: %w", err)
