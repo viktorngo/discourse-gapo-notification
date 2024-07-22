@@ -1,15 +1,20 @@
 package service
 
-//type CategoryService struct {
-//	db                 *gorm.DB
-//	CategoryRepository port.CategoryRepository
-//}
-//
-//func (service CategoryService) GetCategoryByID(id int) (*model.Category, error) {
-//	category, err := service.CategoryRepository.GetCategoryByID(id)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	return category, nil
-//}
+import (
+	"context"
+	"discourse-notification/internal/core/port"
+	"discourse-notification/model"
+)
+
+type CategoryService struct {
+	CategoryRepo port.CategoryRepository
+}
+
+func (service CategoryService) GetCategoryByID(ctx context.Context, id int) (*model.Category, error) {
+	category, err := service.CategoryRepo.GetCategoryByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return category, nil
+}

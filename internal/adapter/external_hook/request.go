@@ -9,4 +9,6 @@ type TopicReq struct {
 	Views           uint   `json:"views"`
 	Likes           uint   `json:"likes"`
 	Event           string `json:"event"`
+	CategoryID      int    `json:"category_id"`
+	CategoryName    string `json:"category_name"`
 }

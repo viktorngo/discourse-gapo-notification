@@ -9,14 +9,16 @@ import (
 )
 
 type PostHandler struct {
-	topicService *service.TopicService
-	workflowHook *external_hook.WorkflowHook
+	topicService    *service.TopicService
+	categoryService *service.CategoryService
+	workflowHook    *external_hook.WorkflowHook
 }
 
-func NewPostHandler(topicService *service.TopicService, workflowHook *external_hook.WorkflowHook) *PostHandler {
+func NewPostHandler(topicService *service.TopicService, categoryService *service.CategoryService, workflowHook *external_hook.WorkflowHook) *PostHandler {
 	return &PostHandler{
-		topicService: topicService,
-		workflowHook: workflowHook,
+		topicService:    topicService,
+		categoryService: categoryService,
+		workflowHook:    workflowHook,
 	}
 }
 
@@ -29,13 +31,19 @@ func (h PostHandler) PostCreated(c *fiber.Ctx) error {
 
 	// when first post in topic (topic's content) created send to workflow
 	if req.Post.PostNumber == 1 {
-		topic, err := h.topicService.GetTopicByID(c.Context(), req.Post.TopicId)
+		topic, err := h.topicService.GetTopicByID(c.UserContext(), req.Post.TopicId)
+		if err != nil {
+			return err
+		}
+
+		// get category information
+		category, err := h.categoryService.GetCategoryByID(c.UserContext(), topic.CategoryID)
 		if err != nil {
 			return err
 		}
 
 		// send topic information to Workflow hook
-		err = h.workflowHook.SendTopic(c.Context(), external_hook.TopicReq{
+		err = h.workflowHook.SendTopic(c.UserContext(), external_hook.TopicReq{
 			CreatorUsername: req.Post.Username,
 			CreatorFullName: req.Post.Name,
 			TopicID:         topic.ID,
@@ -44,6 +52,8 @@ func (h PostHandler) PostCreated(c *fiber.Ctx) error {
 			Views:           topic.Views,
 			Likes:           topic.LikeCount,
 			Event:           "topic_created",
+			CategoryID:      int(category.ID),
+			CategoryName:    category.Name,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to send topic to workflow: %w", err)
@@ -64,7 +74,13 @@ func (h PostHandler) PostEdited(c *fiber.Ctx) error {
 
 	// when first post in topic (topic's content) created send to workflow
 	if req.Post.PostNumber == 1 {
-		topic, err := h.topicService.GetTopicByID(c.Context(), req.Post.TopicId)
+		topic, err := h.topicService.GetTopicByID(c.UserContext(), req.Post.TopicId)
+		if err != nil {
+			return err
+		}
+
+		// get category information
+		category, err := h.categoryService.GetCategoryByID(c.UserContext(), topic.CategoryID)
 		if err != nil {
 			return err
 		}
@@ -74,7 +90,7 @@ func (h PostHandler) PostEdited(c *fiber.Ctx) error {
 		}
 
 		// send topic information to Workflow hook
-		err = h.workflowHook.SendTopic(c.Context(), external_hook.TopicReq{
+		err = h.workflowHook.SendTopic(c.UserContext(), external_hook.TopicReq{
 			CreatorUsername: req.Post.Username,
 			CreatorFullName: req.Post.Name,
 			TopicID:         topic.ID,
@@ -83,6 +99,8 @@ func (h PostHandler) PostEdited(c *fiber.Ctx) error {
 			Views:           topic.Views,
 			Likes:           topic.LikeCount,
 			Event:           "topic_edited",
+			CategoryID:      int(category.ID),
+			CategoryName:    category.Name,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to send topic to workflow: %w", err)

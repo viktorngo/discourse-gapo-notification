@@ -89,7 +89,7 @@ func main() {
 	// repositories
 	topicRepository := repositories.NewTopicRepository(db)
 	userRepository := repositories.NewUserRepository(db)
-	categoryRepository := repositories.NewcategoryRepository(db)
+	categoryRepository := repositories.NewCategoryRepository(db)
 
 	// services
 	topicService := &service.TopicService{
@@ -100,9 +100,13 @@ func main() {
 		CategoryRepository: categoryRepository,
 	}
 
+	categoryService := &service.CategoryService{
+		CategoryRepo: categoryRepository,
+	}
+
 	// handler
 	topicHandler := api.NewHandlerService(topicService)
-	postHandler := api.NewPostHandler(topicService, workflowHook)
+	postHandler := api.NewPostHandler(topicService, categoryService, workflowHook)
 
 	// create fiber app
 	app := fiber.New()

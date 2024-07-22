@@ -18,6 +18,6 @@ func (repo categoryRepository) GetCategoryByID(id int) (*model.Category, error) 
 	return &category, nil
 }
 
-func NewcategoryRepository(db *gorm.DB) port.CategoryRepository {
+func NewCategoryRepository(db *gorm.DB) port.CategoryRepository {
 	return &categoryRepository{db: db}
 }

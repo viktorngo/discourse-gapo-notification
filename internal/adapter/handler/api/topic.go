@@ -22,7 +22,7 @@ func (h TopicHandler) TopicCreated(c *fiber.Ctx) error {
 		return err
 	}
 
-	err := h.topicService.SendNoticeTopicCreated(c.Context(),
+	err := h.topicService.SendNoticeTopicCreated(c.UserContext(),
 		&model.Topic{
 			ID:         req.Topic.Id,
 			CategoryID: req.Topic.CategoryId,
